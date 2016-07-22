@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Movable Ink Creative!</title>
+  <script src="https://code.jquery.com/jquery-3.1.0.min.js"   integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s="   crossorigin="anonymous"></script>
+  <style>
+
+    /* reset */
+
+    body {
+      font-family: Helvetica, Arial, sans-serif;
+      box-sizing: border-box;
+      margin: 0;
+    }
+
+    *, *:before, *:after {
+      box-sizing: inherit;
+    }
+
+    /* main styles */
+
+    .container {
+      position: relative;
+      width: 90%;
+      height: 100%;
+      margin: 30px auto;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 0px;
+      font-size: 1.7em;
+      font-weight: normal;
+      color: #858585;
+      text-transform: uppercase;
+    }
+    
+    .weather-container {
+      display: inline-block;
+      width: 16%;
+      margin: 1% .5%;
+      text-align: left;
+    }
+
+    .icon {
+      float: left;
+    }
+
+    .weather-details {
+      float: right;
+      width: 65%;
+      height: 85px;
+      font-size: 1.1em;
+    }
+
+    .description {
+      margin-top: 5px;
+    }
+
+    .temp {
+      position: absolute;
+      bottom: 0;
+    }
+    .high {
+      font-weight: bold;
+    }
+
+    h2 {
+      width: 100%;
+      padding: .3em .7em;
+      font-size: 1.3em;
+      color: #fff;
+      background-color: #75A8C3;
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: #54565A;
+    }
+
+
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    
+    <h1 class="weather-location">WEATHER FORECAST FOR <span id="location"></span></h1>
+      <div class="weather-container">
+        <h2>Today:</h2>
+        <div class="icon"></div>
+        <div class="weather-details">
+          <p class="description"></p>
+          <p class="temp"><span class="high"></span> / <span class="low"></span> F</p>
+        </div>
+      </div>
+
+      <div class="weather-container">
+        <h2></h2>
+        <div class="icon"></div>
+        <div class="weather-details">
+          <p class="description"></p>
+          <p class="temp"><span class="high"></span> / <span class="low"></span> F</p>        
+        </div>
+      </div>
+
+      <div class="weather-container">
+        <h2></h2>
+        <div class="icon"></div>
+        <div class="weather-details">
+          <p class="description"></p>
+          <p class="temp"><span class="high"></span> / <span class="low"></span> F</p>
+        </div>
+      </div>
+  </div>
+<script type="text/javascript">
+
+var getQueryString = function (field, url){
+    var href = url ? url : window.location.href;
+    var reg = new RegExp( '[?&]' + field + '=([^&#]*)', 'i' );
+    var string = reg.exec(href);
+    return string ? string[1] : null;
+};
+
+var zipCode = getQueryString("zip_code");
+
+var date = getQueryString("date");
+var newDate = new Date(date);
+var month = newDate.getMonth() + 1;
+var targetDay = newDate.getDate();
+
+var city, state, weatherResponse, dayArray;
+
+var queryCity = "http://api.wunderground.com/api/6ea7cf3bc006012f/geolookup/q/" + zipCode + ".json";
+var queryZip = "http://api.wunderground.com/api/6ea7cf3bc006012f/forecast10day/q/" + zipCode + ".json";
+
+$.when(
+
+  $.get(queryCity)
+  .then(function (data){
+    if(data.response.error){
+      throw new Error("API call failed");
+    }
+    city = data.location.city;
+    state = data.location.state;
+  }),
+  $.get(queryZip)
+  .then(function (data){
+    if(data.response.error){
+      throw new Error("API call failed");
+    }
+    weatherResponse = data.forecast.simpleforecast.forecastday;
+    var newToday = weatherResponse.findIndex(function (day,index){
+      if (day.date.day === targetDay){ 
+        return index;
+      }
+    })
+    dayArray = weatherResponse.splice(newToday, newToday +2);
+  })
+  
+)
+.then(function (){
+  
+  $("#location").text(city + ', ' + state);
+  $(".weather-container").each(function (index, element){
+    var $el = $(element);
+
+    if(index !== 0){
+      $el.find("h2").text(dayArray[index].date.weekday + ":");
+    }
+    $el.find(".icon").html('<img src="http://icons.wxug.com/i/c/g/' + dayArray[index].icon + '.gif">');
+    $el.find(".description").text(dayArray[index].conditions);
+    $el.find(".high").html(dayArray[index].high.fahrenheit + "&deg");
+    $el.find(".low").html(dayArray[index].low.fahrenheit + "&deg");
+   })
+})
+.fail(function (){
+  $("body").html("");
+});
+</script>
+</body>
+</html>
